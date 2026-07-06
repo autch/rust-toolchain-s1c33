@@ -1,0 +1,4 @@
+# Local symlink to the shared llvm-c33 (piece-toolchain-llvm) checkout.
+# NOT a submodule — llvm-c33 is shared across other projects, so each dev
+# points this at their own checkout: `ln -s ../llvm-c33 llvm-c33`.
+/llvm-c33
