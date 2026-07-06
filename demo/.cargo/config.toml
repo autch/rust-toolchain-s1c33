@@ -5,4 +5,4 @@
 target = "s1c33-none-piece"
 
 [unstable]
-build-std = ["core"]
+build-std = ["core", "alloc"]
