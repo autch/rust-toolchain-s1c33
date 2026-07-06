@@ -1,0 +1,8 @@
+# Build the s1c33 target by default with a cross-compiled `core`.
+# Requires the stage1 rustc + stage0 cargo of the rust/ submodule, with
+# RUSTC_BOOTSTRAP=1 (build-std is unstable). See README for the exact command.
+[build]
+target = "s1c33-none-piece"
+
+[unstable]
+build-std = ["core"]

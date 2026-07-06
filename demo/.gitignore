@@ -1,0 +1,8 @@
+# Rust / cargo build output
+/target
+
+# Hand-linked / packed artifacts (reproducible from the source + link recipe)
+*.elf
+*.map
+*.pex
+*.pex.org

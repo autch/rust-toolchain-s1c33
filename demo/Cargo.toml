@@ -1,0 +1,13 @@
+[package]
+name = "demo"
+version = "0.1.0"
+edition = "2021"
+description = "Minimal P/ECE app in pure Rust — end-to-end ABI proof for the s1c33-none-piece target"
+
+[lib]
+# Emit a static archive so cargo never invokes the final linker; we link
+# libdemo.a against crt0.o + libpceapi.a by hand (see README).
+crate-type = ["staticlib"]
+
+[profile.release]
+panic = "abort"

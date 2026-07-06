@@ -1,0 +1,3 @@
+[submodule "rust"]
+	path = rust
+	url = git@github.com:autch/rust-s1c33.git
