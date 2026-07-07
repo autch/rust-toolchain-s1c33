@@ -169,6 +169,7 @@ pub struct PIECE_BMP {
 /// `DRAW_OBJECT` — a blit/draw descriptor. Passed **by value** to
 /// `pceLCDDrawObject` (28 bytes → on the stack per the S5U1C33000C ABI).
 #[repr(C)]
+#[derive(Clone, Copy)]
 pub struct DRAW_OBJECT {
     pub dest: *mut PIECE_VRAM,
     pub dx: c_short,

@@ -1,0 +1,14 @@
+[package]
+name = "jien"
+version = "0.1.0"
+edition = "2021"
+description = "Port of the P/ECE sample app 'jien' (bouncing sprite) to pure Rust via pceapi"
+
+[lib]
+crate-type = ["staticlib"]
+
+[dependencies]
+pceapi = { path = "../pceapi" }
+
+[profile.release]
+panic = "abort"
