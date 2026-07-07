@@ -9,8 +9,9 @@ S1C33 code generator.
 
 **Immediate goal — ACHIEVED:** build P/ECE-loadable applications (`.pex`) from Rust
 alone (plus the `llvm-c33` tools), ABI-compatible with the P/ECE kernel and SDK.
-A pure-Rust app (`demo/`) now builds, links against the language-agnostic sysroot,
-packs to `.pex`, and renders "Hello from Rust!" on both piece-emu and real hardware.
+A pure-Rust app (`demo/`) builds, links against the language-agnostic sysroot, packs
+to `.pex`, and runs on both piece-emu and real hardware — using a global allocator
+on the kernel heap, the `pceapi` bindings, and drawing text + live SYSTEMINFO.
 
 ## The two repositories
 
@@ -22,7 +23,9 @@ below are relative to that submodule root (`rust/`) — `cd rust` first.
 |---|---|
 | `.` (repo root) | This repo — the toolchain wrapper. Ties the pieces together. |
 | `rust/` | The rustc fork submodule (`git@github.com:autch/rust-s1c33.git`) with the `s1c33-none-piece` target. |
-| `demo/` | Minimal pure-Rust P/ECE app (staticlib) — the end-to-end ABI proof. See "Building the demo app" below. |
+| `pceapi/` | Bindings crate for the P/ECE kernel API (`ffi` = raw `extern "C"` for all of piece.h + constants; safe wrappers `pad`/`lcd`/`font`/`app`/`cpu`/`heap`/`system`/`time`/`power`/`file`). Includes `heap::PceHeap` (the kernel-heap `GlobalAlloc`). |
+| `demo/` | Minimal pure-Rust P/ECE app (staticlib) — the end-to-end ABI proof. Uses `pceapi`, installs `PceHeap`, exercises `alloc`, and displays SYSTEMINFO. See "Building the demo app". |
+| `abitest/` | Bare-metal ABI unit tests run under piece-emu via semihosting (exit code = pass/fail). `./abitest/run.sh`. See "ABI unit tests". |
 | `llvm-c33/` | LLVM 22.1.1 fork with the S1C33 backend (Phase 6 complete: builds real P/ECE C apps that run on hardware). Has its own `CLAUDE.md` and `DESIGN_SPEC.md`. **Not a submodule** — it is shared with other projects, so it is an in-tree **symlink** to your own checkout (gitignored). Create it once: `ln -s ../llvm-c33 llvm-c33`. |
 
 `llvm-c33/` is a repo-root-relative path (via the symlink); build commands run from
@@ -51,17 +54,27 @@ Done:
   and **`min_global_align = 32`** (gcc33/clang parity — without it a `static [u8; N]`
   can land at an odd address and the kernel's word/halfword accesses trap). See
   "gcc33 / clang ABI parity" below.
-- **End-to-end ABI proof COMPLETE**: the `demo/` app builds → links → packs → runs.
-  Renders "Hello from Rust!" on piece-emu and real hardware. See "Building the demo
-  app" for the exact recipe.
+- **End-to-end ABI proof COMPLETE**: the `demo/` app builds → links → packs → runs
+  on piece-emu and real hardware. See "Building the demo app" for the exact recipe.
 - Frontend-parity audit against clang's `S1C33TargetInfo` found no remaining gaps
   (data layout byte-identical, char signedness both signed, all widths/alignments
   match). See "gcc33 / clang ABI parity".
+- **`alloc` works**: `heap::PceHeap` (in `pceapi`) is a `GlobalAlloc` on the kernel
+  heap (`pceHeapAlloc`/`Free`); `Vec`/`String`/`format!` run on device. Rust uses the
+  kernel heap — not libc malloc that C/C++ were forced onto — because it composes
+  `realloc` itself and the kernel heap bounds-checks (NULL on OOM vs sbrk corruption).
+- **`pceapi` binds the full piece.h API** (all structs `#[repr(C)]`, all externs,
+  constants) with safe wrappers for the mainstream modules.
+- **ABI runtime-verified** (not just IR): c-variadic (caller side — via the kernel's
+  `pceFontPrintf` and a clang C fixture) and struct-by-value (multi-field on stack +
+  §3.5 single 8/16/32-bit element in register) both confirmed on piece-emu. Now
+  regression-guarded by the `abitest/` semihosting suite.
 
-Later / optional: `alloc` + global allocator (pceHeap), fuller pceapi bindings,
-`.cargo/config` + target link-args + a `build.rs`/script or cargo runner so a single
-`cargo build`/`cargo run` produces (and packs/runs) the `.pex` directly. The demo
-currently links and packs via explicit commands (below).
+Later / optional: safe wrappers for the remaining `pceapi` categories (wave, IR,
+USB(COM), vector, flash, timer callbacks — currently raw-ffi-only); `.cargo/config` +
+target link-args + a `build.rs`/script or cargo runner so a single `cargo build`/
+`cargo run` produces (and packs/runs) the `.pex` directly. The demo currently links
+and packs via explicit commands (below).
 
 ## Build workflow (READ THIS — several steps are non-obvious)
 
@@ -107,8 +120,9 @@ A `./x.py` run regenerates it; or repoint it by hand.
 
 ### Building the demo app (`demo/`, a pure-Rust `.pex`)
 Runs from `demo/` (the wrapper repo root), **not** `rust/`. `demo/.cargo/config.toml`
-sets `build-std=["core"]` and the target, so no extra flags are needed — the CPU
-(`s1c33209`) and min-global-align are baked into the target spec.
+sets `build-std=["core", "alloc"]` and the target, so no extra flags are needed — the
+CPU (`s1c33209`) and min-global-align are baked into the target spec. `demo` depends
+on `pceapi` (`path = "../pceapi"`, `features = ["alloc"]`); cargo builds it too.
 
 1. **Build the staticlib** (crate-type `staticlib`, so cargo never invokes the
    linker — we link `libdemo.a` by hand):
@@ -142,6 +156,21 @@ Non-obvious points (all cost real debugging time — don't relearn them):
   auto-runs `startup.pex`), then boot
   `../llvm-c33/piece-emu/build-src/piece-emu-headless-system <img>.pfi --script run.txt`;
   the script's `snapshot` command writes PNGs. Kernel images: `piece-emu/images/`.
+
+### ABI unit tests (`abitest/`, semihosting — fast, no kernel)
+`abitest/run.sh` builds a bare-metal Rust test and runs it under `piece-emu`,
+reporting pass/fail through the emulator's **semihosting** ports (`0x060000`;
+`TEST_RESULT` at `0x060008`, 0 = PASS). The emulator turns that into its exit code,
+so it is a scriptable/CI check — much faster than eyeballing an LCD snapshot.
+- No P/ECE kernel: reuses the bare-metal `crt0.s`/`crt_init.c`/`iram.ld` from
+  `llvm-c33/piece-emu/src/tests/bare_metal` (`_start` → `_start_c` → `main()`, whose
+  return is written to TEST_RESULT). Code runs in IRAM; keep tests alloc-free/small.
+- `abitest/src/lib.rs` is a `#[no_mangle] extern "C" fn main() -> i32` with
+  `check!(expr, code)` assertions (distinct code per check → `[FAIL] code=N`).
+- Cross-language ABI fixtures live in `abitest/csrc/abi_test.c`, built by clang
+  (`--target=s1c33-none-elf`); calling them from Rust checks the calling convention
+  against clang at runtime. Add a check + (if needed) a C fixture + `extern` decl.
+- Kernel APIs (`pceapi`) are NOT available here (no kernel) — test those in `demo/`.
 
 ### Memory / linker constraint
 This machine **swaps if parallel linkers pile up**. The LLVM build cache is set to
@@ -182,6 +211,10 @@ The `S5U1C33000C` calling convention is documented in
 - When changing the callconv, cross-check against DESIGN_SPEC §3 and
   `S1C33ABIInfo` — do not blindly copy another backend (the m68k-derived first cut
   missed §3.5).
+- The mirror is **runtime-verified** against clang, not just at the IR level:
+  `abitest/` passes Rust-declared `#[repr(C)]` structs (multi-field and the §3.5
+  single-element forms) and varargs to clang-built C fixtures and checks the
+  results. Re-run `./abitest/run.sh` after touching `callconv/s1c33.rs`.
 
 ## gcc33 / clang ABI parity (frontend settings rustc must mirror)
 
@@ -235,9 +268,17 @@ rustc suppresses LLVM stack traces. Instead:
 
 ## Relevant commits
 
-- rust `71c0c75c7b3` — Add s1c33-none-piece target.
-- rust `e1079df7579` — mark f16/f128 unreliable for s1c33.
-- rust `92958598444` — pin cpu=s1c33209 + min_global_align=32 (gcc33 ABI parity).
-- llvm submodule `f6e7f2d31f56` — i128 + wide libcall support.
-- llvm-c33 parent `a2ccd4f` — bump llvm submodule.
-- wrapper repo `61ddd43` — initial commit (rust submodule + `demo/` + this file).
+rust submodule (`autch/rust-s1c33`):
+- `71c0c75c7b3` — Add s1c33-none-piece target.
+- `e1079df7579` — mark f16/f128 unreliable for s1c33.
+- `92958598444` — pin cpu=s1c33209 + min_global_align=32 (gcc33 ABI parity).
+
+llvm-c33: llvm submodule `f6e7f2d31f56` (i128 + wide libcalls); parent `a2ccd4f`
+(bump llvm submodule).
+
+wrapper repo (this repo, `main`):
+- `61ddd43` — initial commit (rust submodule + `demo/` + this file).
+- pceHeap global allocator + `alloc`; `pceapi` bindings crate (core subset, then
+  full piece.h API + system/time/power/file wrappers); c-variadic + struct ABI
+  runtime checks in `demo/`; `abitest/` semihosting unit-test harness; demo
+  displays SYSTEMINFO. (`git log` for the exact hashes.)
