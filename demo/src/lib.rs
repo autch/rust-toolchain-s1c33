@@ -51,6 +51,21 @@ pub extern "C" fn pceAppInit() {
     draw(0, 0, "Hello from Rust!");
     draw(0, 12, &line);
 
+    // c-variadic ABI check: call the kernel's printf with several int varargs.
+    // On s1c33 the format is the last named arg, so it *and* every vararg go on
+    // the stack — this exercises the variadic calling convention. If a slot were
+    // off by one the rendered numbers would be garbage; expect "va: 11 22 33 44".
+    font::set_pos(0, 24);
+    unsafe {
+        pceapi::ffi::pceFontPrintf(
+            b"va: %d %d %d %d\0".as_ptr() as *const core::ffi::c_char,
+            11i32,
+            22i32,
+            33i32,
+            44i32,
+        );
+    }
+
     lcd::disp_start();
 }
 
