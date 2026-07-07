@@ -1,0 +1,11 @@
+[package]
+name = "abitest"
+version = "0.1.0"
+edition = "2021"
+description = "Bare-metal ABI unit tests for s1c33-none-piece, run under piece-emu via semihosting"
+
+[lib]
+crate-type = ["staticlib"]
+
+[profile.release]
+panic = "abort"
