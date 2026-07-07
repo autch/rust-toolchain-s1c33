@@ -5,3 +5,10 @@ version = 4
 [[package]]
 name = "demo"
 version = "0.1.0"
+dependencies = [
+ "pceapi",
+]
+
+[[package]]
+name = "pceapi"
+version = "0.1.0"

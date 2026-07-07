@@ -9,5 +9,8 @@ description = "Minimal P/ECE app in pure Rust — end-to-end ABI proof for the s
 # libdemo.a against crt0.o + libpceapi.a by hand (see README).
 crate-type = ["staticlib"]
 
+[dependencies]
+pceapi = { path = "../pceapi", features = ["alloc"] }
+
 [profile.release]
 panic = "abort"

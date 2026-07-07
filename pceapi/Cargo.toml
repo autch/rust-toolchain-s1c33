@@ -1,0 +1,14 @@
+[package]
+name = "pceapi"
+version = "0.1.0"
+edition = "2021"
+description = "Bindings to the Aquaplus P/ECE kernel API (EPSON S1C33209) for the s1c33-none-piece target"
+
+[features]
+# Enables convenience helpers that allocate (e.g. `font::put_str(&str)`), and
+# is required to use `heap::PceHeap` with the `alloc` crate. Core FFI + the
+# non-allocating safe wrappers work without it.
+alloc = []
+
+[lib]
+# Pure bindings library; the app links it into its staticlib.
