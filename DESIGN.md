@@ -40,10 +40,13 @@ Done:
   heap (`pceHeapAlloc`/`Free`); `Vec`/`String`/`format!` run on device. Rust uses the
   kernel heap — not libc malloc that C/C++ were forced onto — because it composes
   `realloc` itself and the kernel heap bounds-checks (NULL on OOM vs sbrk corruption).
-- **`pceapi` binds the full piece.h API** (all structs `#[repr(C)]`, all externs,
-  constants) with safe wrappers for every module (pad/lcd/font/app/cpu/heap/system/
-  time/power/file/wave/timer/flash/ir/usb/vector/debug); only the variadic
-  `pceFontPrintf`/`pcesprintf` stay raw-ffi (no generic safe wrapper).
+- **`pceapi` binds the full piece.h + draw.h API** (all structs `#[repr(C)]`, all
+  externs, constants) with safe wrappers for every module (pad/lcd/font/draw/app/cpu/
+  heap/system/time/power/file/wave/timer/flash/ir/usb/vector/debug); only the variadic
+  `pceFontPrintf`/`pcesprintf` stay raw-ffi (no generic safe wrapper). draw.h adds the
+  graphics primitives (point/line/paint) and object blits (DRAW_OBJECT passed by value
+  — the byval-struct-on-stack ABI). Bind only symbols with a KSNO_/KSNO2_ kernel entry
+  (vector.h) AND a libpceapi.a stub.
 - **ABI runtime-verified** (not just IR): c-variadic (caller side — via the kernel's
   `pceFontPrintf` and a clang C fixture) and struct-by-value (multi-field on stack +
   §3.5 single 8/16/32-bit element in register) both confirmed on piece-emu. Now

@@ -9,7 +9,7 @@
 
 #![allow(non_snake_case)]
 
-use core::ffi::{c_char, c_int, c_uchar, c_ulong, c_ushort, c_void};
+use core::ffi::{c_char, c_int, c_long, c_short, c_uchar, c_ulong, c_ushort, c_void};
 
 /// `MAXFILENAME` from piece.h (filename buffers are `MAXFILENAME + 1`).
 pub const MAXFILENAME: usize = 26;
@@ -125,6 +125,66 @@ pub struct SYSTEMINFO {
     pub pffs_end: *mut c_uchar, // 28
 }
 
+// ---- Graphics types (draw.h / PIECE_Bmp.h / PIECE_Std.h) ----
+
+/// `RECTP` — clip rectangle in byte coordinates.
+#[repr(C)]
+#[derive(Clone, Copy, Default)]
+pub struct RECTP {
+    pub left: c_uchar,
+    pub top: c_uchar,
+    pub right: c_uchar,
+    pub bottom: c_uchar,
+}
+
+/// `PIECE_VRAM` — an off-screen bitmap surface (2-bpp effective).
+#[repr(C)]
+pub struct PIECE_VRAM {
+    pub w: c_short,
+    pub h: c_short,
+    pub buf: *mut c_uchar,
+}
+
+/// `PBMP_FILEHEADER` — P/ECE bitmap (`PBMP`) file header.
+#[repr(C)]
+pub struct PBMP_FILEHEADER {
+    pub head: c_ulong,  // 'PBMP'
+    pub fsize: c_ulong, // bytes
+    pub bpp: c_uchar,   // bit depth (2)
+    pub mask: c_uchar,  // mask bit depth (1)
+    pub w: c_short,     // width (pixels)
+    pub h: c_short,     // height
+    pub buf_size: c_ulong,
+}
+
+/// `PIECE_BMP` — 2-bit bitmap + 1-bit mask. Populated by the SDK's `PBM_*`
+/// loaders (a separate library, NOT a kernel service — not bound here).
+#[repr(C)]
+pub struct PIECE_BMP {
+    pub header: PBMP_FILEHEADER,
+    pub buf: *mut c_uchar,
+    pub mask: *mut c_uchar,
+}
+
+/// `DRAW_OBJECT` — a blit/draw descriptor. Passed **by value** to
+/// `pceLCDDrawObject` (28 bytes → on the stack per the S5U1C33000C ABI).
+#[repr(C)]
+pub struct DRAW_OBJECT {
+    pub dest: *mut PIECE_VRAM,
+    pub dx: c_short,
+    pub dy: c_short,
+    pub dw: c_short,
+    pub dh: c_short,
+    pub src: *mut PIECE_BMP,
+    pub sx: c_short,
+    pub sy: c_short,
+    pub clip: RECTP,
+    pub disp: c_uchar,
+    pub param: c_uchar,
+    pub type_: c_uchar,
+    pub layer: c_uchar,
+}
+
 extern "C" {
     // ---- Pad (input) ----
     pub fn pcePadGet() -> c_ulong;
@@ -140,6 +200,23 @@ extern "C" {
     pub fn pceLCDSetBuffer(pbuff: *mut c_uchar) -> *mut c_uchar;
     pub fn pceLCDSetOrientation(dir: c_int) -> c_int;
     pub fn pceLCDSetBright(bright: c_int) -> c_int;
+
+    // ---- Graphics primitives (draw.h) ----
+    pub fn pceLCDPoint(color: c_long, x: c_long, y: c_long);
+    pub fn pceLCDLine(color: c_long, x1: c_long, y1: c_long, x2: c_long, y2: c_long);
+    pub fn pceLCDPaint(color: c_long, x1: c_long, y1: c_long, x2: c_long, y2: c_long);
+    pub fn pceLCDSetObject(
+        obj: *mut DRAW_OBJECT,
+        src: *mut PIECE_BMP,
+        dx: c_int,
+        dy: c_int,
+        sx: c_int,
+        sy: c_int,
+        w: c_int,
+        h: c_int,
+        param: c_int,
+    );
+    pub fn pceLCDDrawObject(dobj: DRAW_OBJECT) -> c_int;
 
     // ---- Font ----
     pub fn pceFontGetAdrs(code: c_ushort) -> *const c_uchar;
@@ -357,3 +434,44 @@ pub const UCS_RXDONE: c_int = 0x004;
 pub const UCS_TXWAIT: c_int = 0x100;
 pub const UCS_TXING: c_int = 0x200;
 pub const UCS_TXDONE: c_int = 0x400;
+
+// ---- draw.h constants ----
+pub const DISP_X: c_int = 128;
+pub const DISP_Y: c_int = 88;
+
+// Colors (2-bpp grayscale)
+pub const COLOR_BLACK: c_int = 0x03;
+pub const COLOR_GRAY_DARK: c_int = 0x02; // GLAY_B
+pub const COLOR_GRAY_LIGHT: c_int = 0x01; // GLAY_W
+pub const COLOR_WHITE: c_int = 0x00;
+pub const COLOR_MASK: c_int = 0x04;
+
+// Transfer modes (DRW_*) — the low 6 bits of `param`.
+pub const DRW_NOMAL: c_int = 0;
+pub const DRW_ADD: c_int = 1;
+pub const DRW_SUB: c_int = 2;
+pub const DRW_HIGH: c_int = 3;
+pub const DRW_LOW: c_int = 4;
+pub const DRW_NOT: c_int = 5;
+pub const DRW_OR: c_int = 6;
+pub const DRW_AND: c_int = 7;
+pub const DRW_XOR: c_int = 8;
+pub const DRW_HALF: c_int = 9;
+pub const DRW_LIGHT: c_int = 10;
+
+// `param` masks and flip flags (top 2 bits)
+pub const DRW_PARAM: c_int = 0x3f; // transfer-mode mask
+pub const DRW_REV: c_int = 0xc0; // flip mask
+pub const DRW_REVX: c_int = 0x80; // horizontal flip
+pub const DRW_REVY: c_int = 0x40; // vertical flip
+
+// DRAW_OBJECT.type
+pub const TYPE_BMP: c_uchar = 0;
+pub const TYPE_PNT: c_uchar = 1;
+pub const TYPE_LIN: c_uchar = 2;
+pub const TYPE_PIX: c_uchar = 3;
+pub const TYPE_TXT: c_uchar = 4;
+
+// Bitmap pixel depth
+pub const TYPE_1B: c_int = 0;
+pub const TYPE_2B: c_int = 1;

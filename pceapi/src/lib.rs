@@ -20,6 +20,7 @@ extern crate alloc;
 pub mod app;
 pub mod cpu;
 pub mod debug;
+pub mod draw;
 pub mod ffi;
 pub mod file;
 pub mod flash;
