@@ -64,6 +64,21 @@ pub struct FILEACC {
     pub bpos: c_ushort,  // 14
 }
 
+impl Default for FILEACC {
+    /// A zeroed accessor to hand to `pceFileOpen`, which fills it in.
+    fn default() -> Self {
+        FILEACC {
+            valid: 0,
+            resv2: 0,
+            resv3: 0,
+            aptr: core::ptr::null(),
+            fsize: 0,
+            chain: 0,
+            bpos: 0,
+        }
+    }
+}
+
 /// `PCETIME` — real-time-clock date/time.
 #[repr(C)]
 #[derive(Clone, Copy, Default)]
