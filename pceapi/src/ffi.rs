@@ -34,19 +34,6 @@ pub struct PCEWAVEINFO {
     pub pf_end_proc: Option<unsafe extern "C" fn(*mut PCEWAVEINFO)>, // 16
 }
 
-/// `MEMBLK` — a memory block (base + length).
-#[repr(C)]
-pub struct MEMBLK {
-    pub top: *mut c_uchar,
-    pub len: c_ulong,
-}
-
-impl Default for MEMBLK {
-    fn default() -> Self {
-        MEMBLK { top: core::ptr::null_mut(), len: 0 }
-    }
-}
-
 /// `FILEINFO` — a PFFS directory entry (for find).
 #[repr(C)]
 #[derive(Clone, Copy, Default)]
@@ -202,7 +189,6 @@ extern "C" {
 
     // ---- App (extended) ----
     pub fn pceAppExecFile(fname: *const c_char, resv: c_int) -> c_int;
-    pub fn pceAppGetHeap(pmb: *mut MEMBLK) -> c_int;
     pub fn pceAppActiveResponse(flag: c_int);
 
     // ---- Flash ----
@@ -228,9 +214,6 @@ extern "C" {
     pub fn pceFileClose(pfa: *mut FILEACC) -> c_int;
     pub fn pceFileCreate(fname: *const c_char, size: c_ulong) -> c_int;
     pub fn pceFileDelete(fname: *const c_char) -> c_int;
-    pub fn pceFileApfSave(key: c_int, ptr: *const c_void, len: c_int) -> c_int;
-    pub fn pceFileApfLoad(key: c_int, ptr: *mut c_void, len: c_int) -> c_int;
-    pub fn pceFileWriteSector(ptr: *mut c_void, len: c_int) -> c_int;
 
     // ---- Time / RTC ----
     pub fn pceTimeSet(ptime: *const PCETIME);

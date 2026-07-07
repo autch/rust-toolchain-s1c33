@@ -8,7 +8,8 @@ pub fn count() -> u32 {
     unsafe { ffi::pceTimerGetCount() }
 }
 
-/// High-precision cycle counter (for timing measurements).
+/// High-precision cycle counter (for timing measurements). Backed by the kernel's
+/// internal `KSNO2_TimerGetPrecisionCount` service.
 #[inline]
 pub fn precision_count() -> u32 {
     unsafe { ffi::pceTimerGetPrecisionCount() }

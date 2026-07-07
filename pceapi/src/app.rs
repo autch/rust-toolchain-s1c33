@@ -8,8 +8,6 @@
 use crate::ffi;
 use core::ffi::CStr;
 
-pub use crate::ffi::MEMBLK;
-
 /// Set how often (in ms) the kernel calls `pceAppProc`. Returns the previous
 /// period.
 #[inline]
@@ -28,13 +26,6 @@ pub fn req_exit(exitcode: i32) {
 #[inline]
 pub fn exec_file(fname: &CStr, resv: i32) -> i32 {
     unsafe { ffi::pceAppExecFile(fname.as_ptr(), resv) }
-}
-
-/// Query the app's heap block (base + length); fills `mb`, returns the kernel
-/// result. Seed `mb` from `MEMBLK::default()`.
-#[inline]
-pub fn get_heap(mb: &mut MEMBLK) -> i32 {
-    unsafe { ffi::pceAppGetHeap(mb) }
 }
 
 /// Tell the kernel whether this app is "active" (affects power/scheduling).
