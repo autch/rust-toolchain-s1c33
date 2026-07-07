@@ -16,7 +16,7 @@ use alloc::format;
 use alloc::vec::Vec;
 use core::panic::PanicInfo;
 use core::ptr::addr_of_mut;
-use pceapi::{app, font, lcd};
+use pceapi::{app, font, lcd, system};
 
 /// Install the kernel heap as the global allocator (see `pceapi::heap`).
 #[global_allocator]
@@ -65,6 +65,25 @@ pub extern "C" fn pceAppInit() {
             44i32,
         );
     }
+
+    // Key SYSTEMINFO fields (versions decoded as major.minor; memory in KiB).
+    let si = system::info();
+    let sram_kb = (si.sram_end as usize - si.sram_top as usize) / 1024;
+    let pffs_kb = (si.pffs_end as usize - si.pffs_top as usize) / 1024;
+    draw(
+        0,
+        36,
+        &format!(
+            "HW {}.{:02} BIOS {}.{:02}",
+            si.hard_ver >> 8,
+            si.hard_ver & 0xff,
+            si.bios_ver >> 8,
+            si.bios_ver & 0xff,
+        ),
+    );
+    draw(0, 48, &format!("clk {} Hz", si.sys_clock));
+    draw(0, 60, &format!("SRAM {} KiB", sram_kb));
+    draw(0, 72, &format!("PFFS {} KiB", pffs_kb));
 
     lcd::disp_start();
 }
