@@ -24,7 +24,7 @@ pub fn trans() {
     unsafe { ffi::pceLCDTrans() }
 }
 
-/// Tell the kernel which framebuffer to display.
+/// Tell the kernel which framebuffer to display; returns the previous buffer.
 ///
 /// # Safety
 /// The kernel retains `buf` across calls, so it must point at `WIDTH * HEIGHT`
@@ -32,8 +32,15 @@ pub fn trans() {
 /// active (typically a `static`). The S1C33000 traps misaligned word access,
 /// which `pceLCDTrans` performs on this buffer.
 #[inline]
-pub unsafe fn set_buffer(buf: *mut u8) {
-    ffi::pceLCDSetBuffer(buf);
+pub unsafe fn set_buffer(buf: *mut u8) -> *mut u8 {
+    ffi::pceLCDSetBuffer(buf)
+}
+
+/// Return the current framebuffer pointer without changing it (the
+/// `pceLCDSetBuffer(INVALIDPTR)` idiom, where `INVALIDPTR` is `(void*)-1`).
+#[inline]
+pub fn current_buffer() -> *mut u8 {
+    unsafe { ffi::pceLCDSetBuffer(usize::MAX as *mut u8) }
 }
 
 /// Set LCD brightness; returns the previous value.

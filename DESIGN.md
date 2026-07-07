@@ -48,7 +48,10 @@ Done:
   — the byval-struct-on-stack ABI). Bind only symbols with a KSNO_/KSNO2_ kernel entry
   (vector.h) AND a libpceapi.a stub. **Validated by porting the C sample app `jien`
   (`jien/`) to pure Rust**: its LCD output is frame-hash-identical to the original C
-  app on piece-emu (the graphics/sprite path is byte-for-byte equivalent).
+  app on piece-emu (the graphics/sprite path is byte-for-byte equivalent). The full
+  P/ECE **system launcher** (`menu2/`, the real `startup.pex`) is also ported to pure
+  Rust — icon grid, pad navigation, and `pceAppExecFile` app launching — with boot +
+  navigation output frame-hash-identical to the original C launcher.
 - **ABI runtime-verified** (not just IR): c-variadic (caller side — via the kernel's
   `pceFontPrintf` and a clang C fixture) and struct-by-value (multi-field on stack +
   §3.5 single 8/16/32-bit element in register) both confirmed on piece-emu. Now

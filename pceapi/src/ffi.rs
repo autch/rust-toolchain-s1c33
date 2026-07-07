@@ -166,6 +166,23 @@ pub struct PIECE_BMP {
     pub mask: *mut c_uchar,
 }
 
+/// `pffsFileHEADER` — the on-flash header of a PFFS file (e.g. a `.pex`): magic,
+/// type, and offsets to the compressed data / caption / icon, plus the load
+/// address and length.
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct pffsFileHEADER {
+    pub mark: c_uchar,       // +0
+    pub type_: c_uchar,      // +1
+    pub ofs_data: c_ushort,  // +2
+    pub ofs_name: c_ushort,  // +4  caption offset
+    pub ofs_icon: c_ushort,  // +6  icon offset (0 = none)
+    pub resv2: c_ulong,      // +8
+    pub top_adrs: c_ulong,   // +12 load address
+    pub length: c_ulong,     // +16
+    pub crc32: c_ulong,      // +20
+}
+
 /// `DRAW_OBJECT` — a blit/draw descriptor. Passed **by value** to
 /// `pceLCDDrawObject` (28 bytes → on the stack per the S5U1C33000C ABI).
 #[repr(C)]

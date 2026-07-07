@@ -1,0 +1,14 @@
+[package]
+name = "menu2"
+version = "0.1.0"
+edition = "2021"
+description = "Pure-Rust port of the P/ECE system launcher (menu2 / startup.pex): icons, pad input, app launching"
+
+[lib]
+crate-type = ["staticlib"]
+
+[dependencies]
+pceapi = { path = "../pceapi" }
+
+[profile.release]
+panic = "abort"
