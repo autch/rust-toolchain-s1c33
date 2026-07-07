@@ -67,6 +67,21 @@ pub fn close(fa: &mut FILEACC) -> i32 {
     unsafe { ffi::pceFileClose(fa) }
 }
 
+// ---- application preferences (save data) ----
+
+/// Save a small key-indexed blob (application preferences / save data). Returns
+/// the kernel result.
+#[inline]
+pub fn apf_save(key: i32, data: &[u8]) -> i32 {
+    unsafe { ffi::pceFileApfSave(key, data.as_ptr().cast(), data.len() as i32) }
+}
+
+/// Load a key-indexed blob into `buf`. Returns the kernel result.
+#[inline]
+pub fn apf_load(key: i32, buf: &mut [u8]) -> i32 {
+    unsafe { ffi::pceFileApfLoad(key, buf.as_mut_ptr().cast(), buf.len() as i32) }
+}
+
 // ---- directory scan ----
 
 /// Begin a directory scan; fills `fi` with the first entry. 0 = an entry was

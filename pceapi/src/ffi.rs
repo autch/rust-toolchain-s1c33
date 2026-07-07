@@ -41,6 +41,12 @@ pub struct MEMBLK {
     pub len: c_ulong,
 }
 
+impl Default for MEMBLK {
+    fn default() -> Self {
+        MEMBLK { top: core::ptr::null_mut(), len: 0 }
+    }
+}
+
 /// `FILEINFO` — a PFFS directory entry (for find).
 #[repr(C)]
 #[derive(Clone, Copy, Default)]
@@ -111,6 +117,7 @@ pub struct PCEPWRSTAT {
 
 /// `USBCOMINFO` — USB-COM device signature.
 #[repr(C)]
+#[derive(Clone, Copy, Default)]
 pub struct USBCOMINFO {
     pub signature: [c_uchar; 16],
 }

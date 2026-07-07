@@ -41,17 +41,18 @@ Done:
   kernel heap — not libc malloc that C/C++ were forced onto — because it composes
   `realloc` itself and the kernel heap bounds-checks (NULL on OOM vs sbrk corruption).
 - **`pceapi` binds the full piece.h API** (all structs `#[repr(C)]`, all externs,
-  constants) with safe wrappers for the mainstream modules.
+  constants) with safe wrappers for every module (pad/lcd/font/app/cpu/heap/system/
+  time/power/file/wave/timer/flash/ir/usb/vector/debug); only the variadic
+  `pceFontPrintf`/`pcesprintf` stay raw-ffi (no generic safe wrapper).
 - **ABI runtime-verified** (not just IR): c-variadic (caller side — via the kernel's
   `pceFontPrintf` and a clang C fixture) and struct-by-value (multi-field on stack +
   §3.5 single 8/16/32-bit element in register) both confirmed on piece-emu. Now
   regression-guarded by the `abitest/` semihosting suite (AGENTS.md → "ABI unit tests").
 
-Later / optional: safe wrappers for the remaining `pceapi` categories (IR, USB(COM),
-vector — currently raw-ffi-only; wave/timer/flash now wrapped); `.cargo/config` +
-target link-args + a `build.rs`/script or cargo runner so a single `cargo build`/
-`cargo run` produces (and packs/runs) the `.pex` directly. The demo currently links
-and packs via explicit commands (AGENTS.md → "Building the demo app").
+Later / optional: `.cargo/config` + target link-args + a `build.rs`/script or cargo
+runner so a single `cargo build`/`cargo run` produces (and packs/runs) the `.pex`
+directly. The demo currently links and packs via explicit commands (AGENTS.md →
+"Building the demo app"). (`pceapi` wrappers are otherwise complete.)
 
 ## ABI is authoritative in the LLVM fork, not here
 

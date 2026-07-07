@@ -19,17 +19,21 @@ extern crate alloc;
 
 pub mod app;
 pub mod cpu;
+pub mod debug;
 pub mod ffi;
 pub mod file;
 pub mod flash;
 pub mod font;
 pub mod heap;
+pub mod ir;
 pub mod lcd;
 pub mod pad;
 pub mod power;
 pub mod system;
 pub mod time;
 pub mod timer;
+pub mod usb;
+pub mod vector;
 pub mod wave;
 
 pub use pad::{Button, Pad};

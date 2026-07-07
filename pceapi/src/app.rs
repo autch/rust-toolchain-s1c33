@@ -6,6 +6,9 @@
 //! makes into the kernel, plus the notify constants.
 
 use crate::ffi;
+use core::ffi::CStr;
+
+pub use crate::ffi::MEMBLK;
 
 /// Set how often (in ms) the kernel calls `pceAppProc`. Returns the previous
 /// period.
@@ -18,6 +21,27 @@ pub fn set_proc_period(period_ms: i32) -> i32 {
 #[inline]
 pub fn req_exit(exitcode: i32) {
     unsafe { ffi::pceAppReqExit(exitcode) }
+}
+
+/// Launch another app by filename, replacing the current one. Returns the kernel
+/// result (on success it does not return here — the new app takes over).
+#[inline]
+pub fn exec_file(fname: &CStr, resv: i32) -> i32 {
+    unsafe { ffi::pceAppExecFile(fname.as_ptr(), resv) }
+}
+
+/// Query the app's heap block (base + length); fills `mb`, returns the kernel
+/// result. Seed `mb` from `MEMBLK::default()`.
+#[inline]
+pub fn get_heap(mb: &mut MEMBLK) -> i32 {
+    unsafe { ffi::pceAppGetHeap(mb) }
+}
+
+/// Tell the kernel whether this app is "active" (affects power/scheduling).
+#[inline]
+pub fn set_active(active: bool) {
+    let flag = if active { ffi::AAR_ACTIVE } else { ffi::AAR_NOACTIVE };
+    unsafe { ffi::pceAppActiveResponse(flag) }
 }
 
 /// `pceAppNotify` event types (the `type` argument).

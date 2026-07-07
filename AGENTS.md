@@ -21,7 +21,7 @@ below are relative to that submodule root (`rust/`) — `cd rust` first.
 |---|---|
 | `.` (repo root) | This repo — the toolchain wrapper. Ties the pieces together. |
 | `rust/` | The rustc fork submodule (`git@github.com:autch/rust-s1c33.git`) with the `s1c33-none-piece` target. |
-| `pceapi/` | Bindings crate for the P/ECE kernel API (`ffi` = raw `extern "C"` for all of piece.h + constants; safe wrappers `pad`/`lcd`/`font`/`app`/`cpu`/`heap`/`system`/`time`/`power`/`file`/`wave`/`timer`/`flash`). Includes `heap::PceHeap` (the kernel-heap `GlobalAlloc`). IR/USB(COM)/vector remain raw-ffi. |
+| `pceapi/` | Bindings crate for the P/ECE kernel API (`ffi` = raw `extern "C"` for all of piece.h + constants; safe wrappers `pad`/`lcd`/`font`/`app`/`cpu`/`heap`/`system`/`time`/`power`/`file`/`wave`/`timer`/`flash`/`ir`/`usb`/`vector`/`debug`). Includes `heap::PceHeap` (the kernel-heap `GlobalAlloc`). Only the variadic `pceFontPrintf`/`pcesprintf` stay raw-ffi (no generic safe wrapper). |
 | `demo/` | Minimal pure-Rust P/ECE app (staticlib) — the end-to-end ABI proof. Uses `pceapi`, installs `PceHeap`, exercises `alloc`, and displays SYSTEMINFO. See "Building the demo app". |
 | `abitest/` | Bare-metal ABI unit tests run under piece-emu via semihosting (exit code = pass/fail). `./abitest/run.sh`. See "ABI unit tests". |
 | `llvm-c33/` | LLVM 22.1.1 fork with the S1C33 backend (Phase 6 complete: builds real P/ECE C apps that run on hardware). Has its own `CLAUDE.md` and `DESIGN_SPEC.md`. **Not a submodule** — it is shared with other projects, so it is an in-tree **symlink** to your own checkout (gitignored). Create it once: `ln -s ../llvm-c33 llvm-c33`. |
