@@ -47,8 +47,8 @@ Done:
   §3.5 single 8/16/32-bit element in register) both confirmed on piece-emu. Now
   regression-guarded by the `abitest/` semihosting suite (AGENTS.md → "ABI unit tests").
 
-Later / optional: safe wrappers for the remaining `pceapi` categories (wave, IR,
-USB(COM), vector, flash, timer callbacks — currently raw-ffi-only); `.cargo/config` +
+Later / optional: safe wrappers for the remaining `pceapi` categories (IR, USB(COM),
+vector — currently raw-ffi-only; wave/timer/flash now wrapped); `.cargo/config` +
 target link-args + a `build.rs`/script or cargo runner so a single `cargo build`/
 `cargo run` produces (and packs/runs) the `.pex` directly. The demo currently links
 and packs via explicit commands (AGENTS.md → "Building the demo app").
